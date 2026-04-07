@@ -312,7 +312,15 @@ checkLogin();
             <?php endif; ?>
             <?php endif; ?>
             
+            <?php if (hasPermission('manage_users') || hasPermission('manage_settings')): // you might not have manage_settings, let's just make it available for admin, admin has all permissions ?>
             <div class="mt-4 nav-item">
+                <a href="backup_db.php" class="nav-link text-warning">
+                    <i class="fas fa-database"></i> Backup DB
+                </a>
+            </div>
+            <?php endif; ?>
+            
+            <div class="nav-item mb-3">
                 <a href="logout.php" class="nav-link text-danger">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>

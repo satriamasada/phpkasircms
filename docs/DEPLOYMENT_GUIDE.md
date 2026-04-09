@@ -1,54 +1,61 @@
 # Prosedur Deployment & Reset Sistem POS
 
-Dokumen ini menjelaskan langkah-langkah untuk melakukan deployment bersih atau reset total sistem POS dari awal (Fresh Install).
+Dokumen ini menjelaskan langkah-langkah untuk melakukan deployment bersih atau reset total sistem POS premium.
 
 ## ⚠️ PERINGATAN
-Prosedur ini akan **MENGHAPUS SEMUA DATA TRANSAKSI** yang ada. Pastikan Anda telah melakukan backup jika data lama masih diperlukan.
+Prosedur reset akan **MENGHAPUS SEMUA DATA TRANSAKSI**. Pastikan Anda telah mengunduh cadangan (backup) melalui menu Sistem sebelum melanjutkan jika data lama masih diperlukan.
 
 ---
 
-## Langkah 1: Reset Struktur Database (Fresh Install)
-Gunakan file `database_final.sql` untuk menghapus database lama dan membuat struktur baru beserta data master default (Admin, Roles, Permissions).
+## Langkah 1: Persiapan Lingkungan (Environment)
+Berbeda dengan versi lama, konfigurasi sekarang terpusat pada file `.env`.
 
-**Cara Menjalankan:**
-1. Buka Terminal atau Command Prompt.
-2. Jalankan perintah MySQL berikut:
+1. Pastikan file `.env` sudah ada di folder root.
+2. Jika belum, salin dari `.env.example`:
    ```powershell
-   mysql -u root -p < c:\laragon\www\belajarphp\database_final.sql
+   cp .env.example .env
    ```
-   *(Tekan Enter jika tidak ada password, atau masukkan password database Anda).*
-
-**Hasil:**
-- Database `pos_rbac` dibuat ulang.
-- 4 User default dibuat (admin, manager_user, cashier_user, multi_user).
-- Data master (Suppliers, Customers, & 4 Demo Products) tersedia.
+3. Buka `.env` dan sesuaikan `DB_NAME`, `DB_USER`, dan `DB_PASS` sesuai server tujuan.
 
 ---
 
-## Langkah 2: Mengisi Data Simulasi Transaksi (Opsional)
-Jika Anda ingin sistem langsung terlihat memiliki riwayat penjualan (untuk keperluan demo atau testing grafik), jalankan skrip generator.
+## Langkah 2: Reset / Instalasi Bersih via Browser (Direkomendasikan)
+Sistem dilengkapi dengan installer otomatis yang menangani pembuatan tabel dan data master.
 
-**Cara Menjalankan via Browser:**
-1. Login ke aplikasi sebagai **admin** (user: `admin`, pass: `admin123`).
-2. Buka URL: `http://localhost/belajarphp/tools_generate_demo.php`
-
-**Cara Menjalankan via CLI (Lebih Cepat):**
-```powershell
-php c:\laragon\www\belajarphp\tools_generate_demo.php
-```
-
----
-
-## Langkah 3: Verifikasi Sistem Siap Pakai
-Setelah database siap, pastikan hal-hal berikut:
-
-1. **Koneksi Database**: Cek file `includes/db.php`, pastikan `$dbname`, `$username`, dan `$password` sesuai dengan server Anda.
-2. **Izin Folder Backup**: Pastikan folder `backups/` memiliki izin tulis (writable).
-3. **Login Pertama**: Gunakan kredensial berikut:
+1. Buka browser dan arahkan ke alamat aplikasi.
+2. Jika sistem mendeteksi basis data kosong, Anda akan diarahkan ke `install.php`.
+3. Klik tombol **"Mulai Instalasi"**. Sistem akan mengimpor `database_final.sql` secara otomatis.
+4. **Login Pertama**:
    - **Username**: `admin`
    - **Password**: `admin123`
 
 ---
 
-## Langkah 4: Maintenance Rutin
-Sistem telah dikonfigurasi untuk melakukan **Auto-Backup** setiap kali pengguna Logout. File backup akan tersimpan di folder `backups/` dengan format tanggal.
+## Langkah 3: Reset via Utilitas Basis Data (Manual)
+Jika Anda ingin melakukan reset saat aplikasi sudah berjalan:
+
+1. Login sebagai **Admin**.
+2. Buka URL: `http://localhost/belajarphpkasir/setup_database.php`.
+3. Gunakan fitur **"Reset & Reinstall"** untuk membersihkan basis data dan mengulang proses instalasi.
+
+---
+
+## Langkah 4: Mengisi Data Simulasi (Opsional)
+Untuk keperluan pengujian performa grafik dan laporan:
+
+1. Buka URL: `http://localhost/belajarphpkasir/tools_generate_demo.php`.
+2. Skrip ini akan mengisi data transaksi simulasi untuk periode 5 tahun terakhir.
+
+---
+
+## Langkah 5: Verifikasi Akhir
+Pastikan hal-hal berikut setelah deployment:
+
+1. **Izin Folder**: Folder `backups/` harus memiliki izin tulis (`writable`) agar fitur cadangan berfungsi.
+2. **Kode Lisensi**: Pastikan `LICENSE_KEY` di `.env` sudah terisi dengan kunci yang valid untuk membuka fitur-fitur premium (Multi-cabang/Laporan).
+3. **Zona Waktu**: Periksa pengaturan waktu di `includes/functions.php` jika diperlukan sinkronisasi waktu server.
+
+---
+
+_Hubungi Tim Dukungan Teknis jika Anda mengalami kendala pada proses deployment._
+

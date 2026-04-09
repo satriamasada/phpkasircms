@@ -22,11 +22,18 @@ $dbname   = $_ENV['DB_NAME'] ?? 'belajarphpkasir';
 $username = $_ENV['DB_USER'] ?? 'root';
 $password = $_ENV['DB_PASS'] ?? '';
 
+$pdo = null;
+$pdo_error = null;
+
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    die("Database Connection failed: " . $e->getMessage());
+    if ($e->getCode() == 1049) { // Unknown database
+        $pdo_error = "Database '$dbname' tidak ditemukan. Silakan buat database terlebih dahulu di Panel Hosting/Laragon Anda.";
+    } else {
+        $pdo_error = "Database Connection failed: " . $e->getMessage();
+    }
 }
 ?>

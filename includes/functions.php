@@ -2,6 +2,18 @@
 session_start();
 require_once 'db.php';
 
+// --- UNIVERSAL INSTALLER CHECK ---
+global $pdo, $pdo_error;
+$current_page = basename($_SERVER['PHP_SELF']);
+
+if ($current_page !== 'install.php') {
+    // If connection failed OR tables don't exist
+    if ($pdo_error || !isSystemInstalled()) {
+        header('Location: install.php');
+        exit;
+    }
+}
+
 // 1. Simple .env Loader
 function loadEnv($path) {
     if (!file_exists($path)) return;
@@ -89,7 +101,22 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
+function isSystemInstalled() {
+    global $pdo;
+    try {
+        $count = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        return ($count > 0);
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 function checkLogin() {
+    if (!isSystemInstalled()) {
+        header('Location: setup_database.php');
+        exit;
+    }
+    
     if (!isLoggedIn()) {
         header('Location: login.php');
         exit;

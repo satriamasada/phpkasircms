@@ -31,9 +31,10 @@ try {
     $sqlFrom = "FROM sales s 
                 LEFT JOIN customers c ON s.customer_id = c.id";
     
-    // Only fetch credit sales
-    $where = " WHERE s.payment_type = 'credit' ";
-    $params = [];
+    // Only fetch credit sales for the ACTIVE BRANCH
+    $active_branch_id = $_SESSION['active_branch_id'] ?? 1;
+    $where = " WHERE s.payment_type = 'credit' AND s.branch_id = ? ";
+    $params = [$active_branch_id];
     
     if (!empty($searchValue)) {
         $where .= " AND (s.invoice_no LIKE ? OR c.name LIKE ?) ";
@@ -41,8 +42,10 @@ try {
         $params[] = "%$searchValue%";
     }
 
-    // Total records (always constant for credit sales)
-    $totalRecords = $pdo->query("SELECT COUNT(*) FROM sales WHERE payment_type = 'credit'")->fetchColumn();
+    // Total records (branch scope)
+    $stmtTotal = $pdo->prepare("SELECT COUNT(*) FROM sales WHERE payment_type = 'credit' AND branch_id = ?");
+    $stmtTotal->execute([$active_branch_id]);
+    $totalRecords = $stmtTotal->fetchColumn();
 
     // Total records with filtering
     $stmtFiltered = $pdo->prepare("SELECT COUNT(*) $sqlFrom $where");

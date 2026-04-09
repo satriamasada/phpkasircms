@@ -5,9 +5,11 @@ checkLogin();
 $id = $_GET['id'] ?? 0;
 
 $stmt = $pdo->prepare("
-    SELECT sd.*, p.name as product_name 
+    SELECT sd.*, p.name as product_name, s.invoice_no, b.name as branch_name
     FROM sales_details sd 
     JOIN products p ON sd.product_id = p.id 
+    JOIN sales s ON sd.sale_id = s.id
+    LEFT JOIN branches b ON s.branch_id = b.id
     WHERE sd.sale_id = ?
 ");
 $stmt->execute([$id]);
@@ -17,7 +19,12 @@ if (empty($details)) {
     echo '<div class="p-3 text-center">No details found.</div>';
     exit;
 }
+$branch_name = $details[0]['branch_name'] ?? 'Utama';
 ?>
+<div class="px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
+    <span class="small fw-bold text-muted text-uppercase">Rincian Barang</span>
+    <span class="badge bg-primary rounded-pill"><i class="fas fa-store me-1"></i> Cabang: <?php echo $branch_name; ?></span>
+</div>
 <table class="table mb-0">
     <thead class="bg-body-tertiary small fw-bold">
         <tr>

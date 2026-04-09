@@ -58,6 +58,7 @@ include 'layouts/header.php';
                     <tr class="text-uppercase small fw-bold text-muted">
                         <th>Tanggal & Waktu</th>
                         <th>No. Invoice</th>
+                        <th>Cabang</th>
                         <th>Pelanggan</th>
                         <th>Kasir</th>
                         <th>Metode</th>
@@ -122,7 +123,7 @@ $(document).ready(function() {
             }
         },
         "columnDefs": [
-            { "orderable": false, "targets": 6 } // Action column not sortable
+            { "orderable": false, "targets": 7 } // Action column not sortable
         ]
     });
 });

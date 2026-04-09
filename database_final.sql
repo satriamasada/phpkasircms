@@ -1,14 +1,28 @@
--- =======================================================
--- FINAL DATABASE SCHEMA & DEMO DATA FOR POS RBAC
--- System: Multi-Role Support, Plain Text Password, Dark Mode Ready
--- =======================================================
-
 SET FOREIGN_KEY_CHECKS = 0;
-DROP DATABASE IF EXISTS pos_rbac;
-CREATE DATABASE pos_rbac;
-USE pos_rbac;
 
--- 1. RBAC STRUCTURE
+-- 1. BRANCHES & RBAC STRUCTURE
+CREATE TABLE IF NOT EXISTS branches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    address TEXT,
+    phone VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1.1 GLOBAL SYSTEM SETTINGS
+CREATE TABLE IF NOT EXISTS settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Seed Default Settings
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES 
+('app_name', 'POS PREMIUM SYSTEM'),
+('app_owner', 'Premium Retail Group'),
+('app_contact', '0812-3456-7890'),
+('app_address', 'Jakarta, Indonesia');
+
 CREATE TABLE IF NOT EXISTS roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -31,10 +45,12 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id INT,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     fullname VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -77,12 +93,14 @@ CREATE TABLE IF NOT EXISTS products (
 -- 3. TRANSACTIONS TABLES
 CREATE TABLE IF NOT EXISTS sales (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id INT,
     user_id INT,
     customer_id INT,
     invoice_no VARCHAR(50) NOT NULL UNIQUE,
     total_amount DECIMAL(15, 2) NOT NULL,
     payment_type ENUM('cash', 'card', 'transfer', 'credit') DEFAULT 'cash',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 );
@@ -109,35 +127,40 @@ CREATE TABLE IF NOT EXISTS debt_payments (
 );
 
 -- 5. INITIAL SEEDING DATA
-INSERT INTO roles (id, name, description) VALUES 
+INSERT IGNORE INTO roles (id, name, description) VALUES 
 (1, 'admin', 'Full access to all system modules'),
 (2, 'manager', 'Manage products, suppliers, and view reports'),
 (3, 'cashier', 'Access to POS system and customer management');
 
-INSERT INTO permissions (name, label) VALUES
+INSERT IGNORE INTO permissions (name, label) VALUES
 ('manage_rbac', 'Manage Roles & Permissions'),
 ('manage_users', 'Manage User Accounts'),
 ('manage_products', 'Manage Products'),
 ('manage_suppliers', 'Manage Suppliers'),
 ('manage_customers', 'Manage Customers'),
 ('view_reports', 'View Sales Reports'),
-('access_pos', 'Access Cashier POS');
+('access_pos', 'Access Cashier POS'),
+('manage_branches', 'Manage Store Branches');
 
 -- Assign Permissions to Roles
 -- Admin: All
-INSERT INTO role_permissions (role_id, permission_id) SELECT 1, id FROM permissions;
+INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT 1, id FROM permissions;
 -- Manager: Inventory & Reports
-INSERT INTO role_permissions (role_id, permission_id) SELECT 2, id FROM permissions WHERE name IN ('manage_products', 'manage_suppliers', 'manage_customers', 'view_reports');
+INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT 2, id FROM permissions WHERE name IN ('manage_products', 'manage_suppliers', 'manage_customers', 'view_reports');
 -- Cashier: POS & Customers
-INSERT INTO role_permissions (role_id, permission_id) SELECT 3, id FROM permissions WHERE name IN ('manage_customers', 'access_pos');
+INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT 3, id FROM permissions WHERE name IN ('manage_customers', 'access_pos');
 
 -- 5. DEMO DATA SEEDING
+-- Branches
+INSERT INTO branches (id, name, address, phone) VALUES 
+(1, 'Pusat (Headquarters)', 'Jl. Utama No. 1, Jakarta', '021-12345678');
+
 -- Users
-INSERT INTO users (id, username, password, fullname) VALUES 
-(1, 'admin', 'admin123', 'Super Administrator'),
-(2, 'manager_user', 'manager123', 'Project Manager'),
-(3, 'cashier_user', 'cashier123', 'Frontline Cashier'),
-(4, 'multi_user', 'multi123', 'Testing Multi Role');
+INSERT INTO users (id, branch_id, username, password, fullname) VALUES 
+(1, 1, 'admin', 'admin123', 'Super Administrator'),
+(2, 1, 'manager_user', 'manager123', 'Project Manager'),
+(3, 1, 'cashier_user', 'cashier123', 'Frontline Cashier'),
+(4, 1, 'multi_user', 'multi123', 'Testing Multi Role');
 
 -- User Roles Mapping
 INSERT INTO user_roles (user_id, role_id) VALUES 

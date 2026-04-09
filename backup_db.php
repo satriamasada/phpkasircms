@@ -4,7 +4,7 @@ require_once 'includes/db.php';
 
 // Check admin
 if (!hasPermission('manage_users') && !hasPermission('manage_settings')) {
-    header("Location: index.php");
+    header("Location: dashboard.php");
     exit;
 }
 

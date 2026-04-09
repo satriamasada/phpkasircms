@@ -1,0 +1,27 @@
+# Environment Files
+.env
+
+# Tooling & Security (Sensitive)
+tools_license_gen.php
+tools_generate_demo.php
+
+# Backups & Data
+backups/
+*.sql.gz
+backups/*.sql
+
+# IDEs & System
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.laragon/
+
+# PHP Logs & Temp
+*.log
+tmp/
+cache/
+
+# Dependencies (Managed via Composer/NPM)
+vendor/
+node_modules/

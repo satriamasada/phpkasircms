@@ -26,28 +26,36 @@ $orderColumn = $columns[$orderColumnIndex] ?? 's.created_at';
 // Base Query
 $sql = "FROM sales s 
         LEFT JOIN customers c ON s.customer_id = c.id 
-        LEFT JOIN users u ON s.user_id = u.id";
+        LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN branches b ON s.branch_id = b.id";
 
-// Filtering
+// Filtering & Branch Scope
+$active_branch_id = $_SESSION['active_branch_id'] ?? 1;
+$branchWhere = " s.branch_id = ? ";
+$params = [$active_branch_id];
 $where = "";
-$params = [];
+
 if (!empty($searchValue)) {
-    $where = " WHERE s.invoice_no LIKE ? OR c.name LIKE ? OR u.fullname LIKE ? ";
-    $params = ["%$searchValue%", "%$searchValue%", "%$searchValue%"];
+    $where = " AND (s.invoice_no LIKE ? OR c.name LIKE ? OR u.fullname LIKE ?) ";
+    $params[] = "%$searchValue%";
+    $params[] = "%$searchValue%";
+    $params[] = "%$searchValue%";
 }
 
-// Total records without filtering
-$totalRecords = $pdo->query("SELECT COUNT(*) FROM sales")->fetchColumn();
+// Total records without filtering (but within branch scope)
+$stmtTotal = $pdo->prepare("SELECT COUNT(*) FROM sales WHERE branch_id = ?");
+$stmtTotal->execute([$active_branch_id]);
+$totalRecords = $stmtTotal->fetchColumn();
 
 // Total records with filtering
-$stmtFiltered = $pdo->prepare("SELECT COUNT(*) $sql $where");
+$stmtFiltered = $pdo->prepare("SELECT COUNT(*) $sql WHERE $branchWhere $where");
 $stmtFiltered->execute($params);
 $totalRecordsFiltered = $stmtFiltered->fetchColumn();
 
 // Fetch Data
-$query = "SELECT s.*, c.name as customer_name, u.fullname as cashier_name 
+$query = "SELECT s.*, c.name as customer_name, u.fullname as cashier_name, b.name as branch_name
           $sql 
-          $where 
+          WHERE $branchWhere $where 
           ORDER BY $orderColumn $orderDir 
           LIMIT $length OFFSET $start";
 
@@ -60,6 +68,7 @@ foreach ($sales as $s) {
     $data[] = [
         date('d/m/Y H:i', strtotime($s['created_at'])),
         '#<span class="fw-bold text-primary cursor-pointer" onclick="viewDetails('.$s['id'].', \''.$s['invoice_no'].'\')">'.$s['invoice_no'].'</span>',
+        $s['branch_name'] ?? '<span class="text-muted">Utama</span>',
         $s['customer_name'] ?? '<span class="text-muted">Umum</span>',
         $s['cashier_name'] ?? 'Sistem',
         '<span class="badge rounded-pill bg-'.($s['payment_type'] == 'credit' ? 'warning text-dark' : 'secondary').' opacity-75">'.strtoupper($s['payment_type']).'</span>',

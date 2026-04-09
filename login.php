@@ -2,7 +2,7 @@
 require_once 'includes/functions.php';
 
 if (isLoggedIn()) {
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -21,6 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['fullname'] = $user['fullname'];
+        $_SESSION['branch_id'] = $user['branch_id']; // Default user branch
+        $_SESSION['active_branch_id'] = $user['branch_id']; // Current active selection for POS
+        
+        // If user has no branch assigned, and it's a Professional tier, 
+        // they might need one. Let's fallback to ID 1 if null.
+        if (empty($_SESSION['active_branch_id'])) {
+            $_SESSION['active_branch_id'] = 1;
+        }
         
         // Fetch all roles for this user
         $roleStmt = $pdo->prepare("SELECT r.id, r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ?");
@@ -30,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['roles'] = $roles;
         $_SESSION['role_names'] = array_column($roles, 'name');
         
-        header('Location: index.php');
+        header('Location: dashboard.php');
         exit;
     } else {
         $error = 'Invalid username or password';

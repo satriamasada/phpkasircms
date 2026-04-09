@@ -17,8 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_sale'])) {
             $pdo->beginTransaction();
 
             // 1. Insert Sales
-            $stmt = $pdo->prepare("INSERT INTO sales (user_id, customer_id, invoice_no, total_amount, payment_type) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$user_id, $customer_id, $invoice_no, $total_amount, $payment_type]);
+            $branch_id = $_SESSION['active_branch_id'] ?? 1;
+            $stmt = $pdo->prepare("INSERT INTO sales (user_id, branch_id, customer_id, invoice_no, total_amount, payment_type) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$user_id, $branch_id, $customer_id, $invoice_no, $total_amount, $payment_type]);
             $sale_id = $pdo->lastInsertId();
 
             // 2. Insert Details & Update Stock

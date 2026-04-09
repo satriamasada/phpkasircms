@@ -12,13 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password = $_POST['password'];
             $role_ids = $_POST['role_ids'] ?? [];
             
-            $stmt = $pdo->prepare("INSERT INTO users (username, password, fullname) VALUES (?, ?, ?)");
-            if ($stmt->execute([$username, $password, $fullname])) {
-                $user_id = $pdo->lastInsertId();
-                foreach($role_ids as $rid) {
-                    $pdo->prepare("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)")->execute([$user_id, $rid]);
+            if (!checkLicenseLimit('users')) {
+                setFlashMessage("User limit reached for your subscription!", "danger");
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO users (username, password, fullname) VALUES (?, ?, ?)");
+                if ($stmt->execute([$username, $password, $fullname])) {
+                    $user_id = $pdo->lastInsertId();
+                    foreach($role_ids as $rid) {
+                        $pdo->prepare("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)")->execute([$user_id, $rid]);
+                    }
+                    setFlashMessage("User created successfully!");
                 }
-                setFlashMessage("User created successfully!");
             }
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['id'];
@@ -76,9 +80,15 @@ include 'layouts/header.php';
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">User Management</h5>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-            <i class="fas fa-user-plus me-2"></i> Add User
-        </button>
+        <?php if (checkLicenseLimit('users')): ?>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="fas fa-plus me-2"></i> Tambah User
+            </button>
+        <?php else: ?>
+            <button class="btn btn-secondary" disabled>
+                <i class="fas fa-lock me-2"></i> Limit Akun (Max 2 Paket Standard)
+            </button>
+        <?php endif; ?>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">

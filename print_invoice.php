@@ -5,12 +5,14 @@ checkLogin();
 $id = $_GET['id'] ?? null;
 if (!$id) die("Missing sale ID");
 
-// Fetch sale data
+// Fetch sale data with branch info
 $stmt = $pdo->prepare("
-    SELECT s.*, c.name as customer_name, u.fullname as cashier_name
+    SELECT s.*, c.name as customer_name, u.fullname as cashier_name, 
+           b.name as branch_name, b.address as branch_address, b.phone as branch_phone
     FROM sales s
     LEFT JOIN customers c ON s.customer_id = c.id
     LEFT JOIN users u ON s.user_id = u.id
+    LEFT JOIN branches b ON s.branch_id = b.id
     WHERE s.id = ?
 ");
 $stmt->execute([$id]);
@@ -34,13 +36,17 @@ $items = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title>Invoice #<?php echo $sale['invoice_no']; ?></title>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; font-size: 14px; width: 300px; margin: 0 auto; color: #000; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 13px; width: 300px; margin: 0 auto; color: #000; line-height: 1.4; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .divider { border-top: 1px dashed #000; margin: 10px 0; }
-        .header { margin-bottom: 20px; }
+        .text-bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 8px 0; }
+        .header { margin-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 18px; }
+        .header h2 { margin: 2px 0; font-size: 15px; }
+        .header p { margin: 0; font-size: 11px; }
         .item-row { margin-bottom: 5px; }
-        .footer { margin-top: 20px; font-size: 12px; }
+        .footer { margin-top: 20px; font-size: 11px; }
         @media print {
             .no-print { display: none; }
             body { width: 100%; }
@@ -54,17 +60,16 @@ $items = $stmt->fetchAll();
     </div>
 
     <div class="header text-center">
-        <h2 style="margin: 0;">POS PREMIUM</h2>
-        <p style="margin: 5px 0;">Premium Retail System</p>
-        <p style="margin: 0; font-size: 12px;">Jakarta, Indonesia</p>
+        <h1><?php echo strtoupper(getSetting('app_name', 'POS PREMIUM SYSTEM')); ?></h1>
+        <p>Sistem Kasir v2 - Digital Receipt</p>
     </div>
 
     <div class="divider"></div>
 
     <table width="100%">
         <tr>
-            <td>Invoice:</td>
-            <td class="text-right"><?php echo $sale['invoice_no']; ?></td>
+            <td width="35%">Invoice:</td>
+            <td class="text-right text-bold">#<?php echo $sale['invoice_no']; ?></td>
         </tr>
         <tr>
             <td>Date:</td>
@@ -76,8 +81,27 @@ $items = $stmt->fetchAll();
         </tr>
         <tr>
             <td>Customer:</td>
-            <td class="text-right"><?php echo $sale['customer_name'] ?? 'General'; ?></td>
+            <td class="text-right"><?php echo $sale['customer_name'] ?? 'Umum'; ?></td>
         </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <table width="100%" style="font-size: 11px; color: #333;">
+        <tr>
+            <td width="35%">Toko/Cabang:</td>
+            <td class="text-right"><?php echo $sale['branch_name'] ?? 'Pusat'; ?></td>
+        </tr>
+        <tr>
+            <td>Alamat:</td>
+            <td class="text-right"><?php echo $sale['branch_address'] ?? '-'; ?></td>
+        </tr>
+        <?php if ($sale['branch_phone']): ?>
+        <tr>
+            <td>Kontak:</td>
+            <td class="text-right"><?php echo $sale['branch_phone']; ?></td>
+        </tr>
+        <?php endif; ?>
     </table>
 
     <div class="divider"></div>
